@@ -11,26 +11,37 @@ import itertools as it
 class Ranger(Optimizer):
     
     def __init__(self, params, lr=1e-3, alpha=0.5, k=6, betas=(.9,0.999), eps=1e-8, weight_decay=0):
+        #parameter checks
         if not 0.0 <= alpha <= 1.0:
             raise ValueError(f'Invalid slow update rate: {alpha}')
         if not 1 <= k:
             raise ValueError(f'Invalid lookahead steps: {k}')
+        if not lr > 0:
+            raise ValueError(f'Invalid Learning Rate: {lr}')
+        if not eps > 0:
+            raise ValueError(f'Invalid eps: {eps}')
         
+        #prep defaults and init torch.optim base
+        defaults = dict(lr=lr, betas=betas, eps=eps, weight_decay=weight_decay)
+        super().__init__(params,defaults)
+        
+        #now we can get to work...
         for group in self.param_groups:
             group["step_counter"] = 0
-            print("group step counter init")
+            #print("group step counter init")
                       
-        defaults = dict(lr=lr, betas=betas, eps=eps, weight_decay=weight_decay)
+        #look ahead params
         self.alpha = alpha
-        self.k = k        
+        self.k = k 
+        
+        #radam buffer for state
         self.radam_buffer = [[None,None,None] for ind in range(10)]
         
-        super(Ranger, self).__init__(params,defaults)
-        
-        
+        #lookahead weights
         self.slow_weights = [[p.clone().detach() for p in group['params']]
                                 for group in self.param_groups]
-
+        
+        #don't use grad for lookahead weights
         for w in it.chain(*self.slow_weights):
             w.requires_grad = False
         
@@ -41,8 +52,12 @@ class Ranger(Optimizer):
         
     def step(self, closure=None):
         loss = None
+        #note - below is commented out b/c I have other work that passes back the loss as a float, and thus not a callable closure.  
+        #Uncomment if you need to use the actual closure...
+        
         #if closure is not None:
             #loss = closure()
+            
         #------------ radam
         for group in self.param_groups:
     
