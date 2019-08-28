@@ -10,7 +10,7 @@ import itertools as it
 
 class Ranger(Optimizer):
     
-    def __init__(self, params, lr=1e-3, alpha=0.5, k=6, betas=(.9,0.999), eps=1e-8, weight_decay=0):
+    def __init__(self, params, lr=1e-3, alpha=0.5, k=6, N_sma_threshhold=5, betas=(.9,0.999), eps=1e-8, weight_decay=0):
         #parameter checks
         if not 0.0 <= alpha <= 1.0:
             raise ValueError(f'Invalid slow update rate: {alpha}')
@@ -24,6 +24,9 @@ class Ranger(Optimizer):
         #prep defaults and init torch.optim base
         defaults = dict(lr=lr, betas=betas, eps=eps, weight_decay=weight_decay)
         super().__init__(params,defaults)
+        
+        #adjustable threshold
+        self.N_sma_threshhold = N_sma_threshhold
         
         #now we can get to work...
         for group in self.param_groups:
@@ -96,7 +99,7 @@ class Ranger(Optimizer):
                     N_sma_max = 2 / (1 - beta2) - 1
                     N_sma = N_sma_max - 2 * state['step'] * beta2_t / (1 - beta2_t)
                     buffered[1] = N_sma
-                    if N_sma > 4:
+                    if N_sma > self.N_sma_threshhold:
                         step_size = group['lr'] * math.sqrt((1 - beta2_t) * (N_sma - 4) / (N_sma_max - 4) * (N_sma - 2) / N_sma * N_sma_max / (N_sma_max - 2)) / (1 - beta1 ** state['step'])
                     else:
                         step_size = group['lr'] / (1 - beta1 ** state['step'])
