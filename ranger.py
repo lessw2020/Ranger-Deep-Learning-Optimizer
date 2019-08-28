@@ -10,7 +10,7 @@ import itertools as it
 
 class Ranger(Optimizer):
     
-    def __init__(self, params, lr=1e-3, alpha=0.5, k=6, N_sma_threshhold=5, betas=(.9,0.999), eps=1e-8, weight_decay=0):
+    def __init__(self, params, lr=1e-3, alpha=0.5, k=6, N_sma_threshhold=5, betas=(.95,0.999), eps=1e-8, weight_decay=0):
         #parameter checks
         if not 0.0 <= alpha <= 1.0:
             raise ValueError(f'Invalid slow update rate: {alpha}')
@@ -20,6 +20,11 @@ class Ranger(Optimizer):
             raise ValueError(f'Invalid Learning Rate: {lr}')
         if not eps > 0:
             raise ValueError(f'Invalid eps: {eps}')
+        
+        #parameter comments:
+        # beta1 (momentum) of .95 seems to work better than .90...
+        #N_sma_threshold of 5 seems better in testing than 4.
+        #In both cases, worth testing on your dataset (.90 vs .95, 4 vs 5) to make sure which works best for you.
         
         #prep defaults and init torch.optim base
         defaults = dict(lr=lr, betas=betas, eps=eps, weight_decay=weight_decay)
