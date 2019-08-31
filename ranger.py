@@ -1,3 +1,5 @@
+#Ranger deep learning optimizer - RAdam + Lookahead combined.
+#https://github.com/lessw2020/Ranger-Deep-Learning-Optimizer
 
 import math
 import torch
@@ -6,11 +8,12 @@ import itertools as it
 #from torch.optim import Optimizer
 #credit - Lookahead implementation from LonePatient - https://github.com/lonePatient/lookahead_pytorch/blob/master/optimizer.py
 #credit2 - RAdam code by https://github.com/LiyuanLucasLiu/RAdam/blob/master/radam.py
-
+#changes 8/31/19 - fix references to *self*.N_sma_threshold; 
+                #changed eps to 1e-5 as better default than 1e-8.
 
 class Ranger(Optimizer):
     
-    def __init__(self, params, lr=1e-3, alpha=0.5, k=6, N_sma_threshhold=5, betas=(.95,0.999), eps=1e-8, weight_decay=0):
+    def __init__(self, params, lr=1e-3, alpha=0.5, k=6, N_sma_threshhold=5, betas=(.95,0.999), eps=1e-5, weight_decay=0):
         #parameter checks
         if not 0.0 <= alpha <= 1.0:
             raise ValueError(f'Invalid slow update rate: {alpha}')
@@ -113,7 +116,7 @@ class Ranger(Optimizer):
                 if group['weight_decay'] != 0:
                     p_data_fp32.add_(-group['weight_decay'] * group['lr'], p_data_fp32)
     
-                if N_sma > N_sma_threshhold:
+                if N_sma > self.N_sma_threshhold:
                     denom = exp_avg_sq.sqrt().add_(group['eps'])
                     p_data_fp32.addcdiv_(-step_size, exp_avg, denom)
                 else:
@@ -138,4 +141,3 @@ class Ranger(Optimizer):
         
             
         return loss
-
