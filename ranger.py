@@ -108,9 +108,9 @@ class Ranger(Optimizer):
                     N_sma = N_sma_max - 2 * state['step'] * beta2_t / (1 - beta2_t)
                     buffered[1] = N_sma
                     if N_sma > self.N_sma_threshhold:
-                        step_size = group['lr'] * math.sqrt((1 - beta2_t) * (N_sma - 4) / (N_sma_max - 4) * (N_sma - 2) / N_sma * N_sma_max / (N_sma_max - 2)) / (1 - beta1 ** state['step'])
+                        step_size = math.sqrt((1 - beta2_t) * (N_sma - 4) / (N_sma_max - 4) * (N_sma - 2) / N_sma * N_sma_max / (N_sma_max - 2)) / (1 - beta1 ** state['step'])
                     else:
-                        step_size = group['lr'] / (1 - beta1 ** state['step'])
+                        step_size = 1.0 / (1 - beta1 ** state['step'])
                     buffered[2] = step_size
     
                 if group['weight_decay'] != 0:
@@ -118,9 +118,9 @@ class Ranger(Optimizer):
     
                 if N_sma > self.N_sma_threshhold:
                     denom = exp_avg_sq.sqrt().add_(group['eps'])
-                    p_data_fp32.addcdiv_(-step_size, exp_avg, denom)
+                    p_data_fp32.addcdiv_(-step_size * group['lr'], exp_avg, denom)
                 else:
-                    p_data_fp32.add_(-step_size, exp_avg)
+                    p_data_fp32.add_(-step_size * group['lr'], exp_avg)
     
                 p.data.copy_(p_data_fp32)
         
