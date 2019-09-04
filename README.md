@@ -1,5 +1,6 @@
 # Ranger-Deep-Learning-Optimizer
 Ranger - a synergistic optimizer combining RAdam (Rectified Adam) and LookAhead in one codebase.
+
 Latest version 9.3.19 - full refactoring for slow weights and one pass handling (vs two before).  Refactor should eliminate any random save/load issues regarding memory.   
 
 Medium article with more info:  
