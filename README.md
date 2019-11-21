@@ -32,7 +32,26 @@ Fixes:
 1 - Differential Group learning rates now supported.  This was fix in RAdam and ported here thanks to @sholderbach.
 2 - save and then load may leave first run weights stranded in memory, slowing down future runs = fixed.
 
+### Installation
+Clone the repo, cd into it and install it in editable mode (`-e` option).
+That way, these is no more need to re-install the package after modification.
+```bash
+git clone https://github.com/lessw2020/Ranger-Deep-Learning-Optimizer
+cd Ranger-Deep-Learning-Optimizer
+pip install -e . 
+```
 
+### Usage 
+```python
+from ranger import Ranger  # this is from ranger.py
+from ranger import RangerVA  # this is from ranger913A.py
+from ranger import RangerQH  # this is from rangerqh.py
+
+# Define your model
+model = ...
+# Each of the Ranger, RangerVA, RangerQH have different parameters.
+optimizer = Ranger(model.parameters(), **kwargs)
+```
 Usage and notebook to test are available here:
 https://github.com/lessw2020/Ranger-Mish-ImageWoof-5
 

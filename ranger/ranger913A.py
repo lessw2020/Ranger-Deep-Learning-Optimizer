@@ -24,7 +24,7 @@ import itertools as it
 
 
 
-class Ranger(Optimizer):
+class RangerVA(Optimizer):
 
     def __init__(self, params, lr=1e-3, alpha=0.5, k=6, n_sma_threshhold=5, betas=(.95,0.999), 
                  eps=1e-5, weight_decay=0, amsgrad=True, transformer='softplus', smooth=50,
