@@ -1,21 +1,16 @@
-# Ranger-Deep-Learning-Optimizer
-Ranger - a synergistic optimizer combining RAdam (Rectified Adam) and LookAhead in one codebase.
+# Ranger-Deep-Learning-Optimizer 
+</br>
+Ranger - a synergistic optimizer combining RAdam (Rectified Adam) and LookAhead, and now GC (gradient centralization) in one optimizer.
+</br>
+Latest version 20.4.11 - new record for accuracy on benchmarks with the addition of Gradient Centralization! </br> </br>
+What is Gradient Centralization? = "GC can be viewed as a projected gradient descent method with a constrained loss function. The Lipschitzness of the constrained loss function and its gradient is better so that the training process becomes more efficient and stable."  Source paper:  https://arxiv.org/abs/2004.01461v2
 
-Latest version 9.3.19 - full refactoring for slow weights and one pass handling (vs two before).  Refactor should eliminate any random save/load issues regarding memory.
+Ranger now uses Gradient Centralization by default, and applies it to all conv and fc layers by default.  However, everything is customizable so you can test with and without on your own datasets.  (Turn on off via "use_gc" flag at init).  
 
+# Full customization at init: 
 
-///////////////////////
-
-Beta Version - Ranger913A.py:
-
-For anyone who wants to try this out early, this version changes from RAdam to using calibrated anistropic adaptive learning rate per this paper:
-
-https://arxiv.org/abs/1908.00700v2
-
-"Empirical studies support our observation of the anisotropic A-LR and show that the proposed methods outperform existing AGMs and generalize even better than S-Momentum in multiple deep learning tasks."
-
-Initial testing looks very good for training stabilization.  Any feedback in comparsion with current Ranger (9.3.19) is welcome!
-
+ 
+![](images/ranger-init.jpg)
 /////////////////////
 
 Medium article with more info:  
