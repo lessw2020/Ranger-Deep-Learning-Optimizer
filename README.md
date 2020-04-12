@@ -7,11 +7,11 @@ What is Gradient Centralization? = "GC can be viewed as a projected gradient des
 
 Ranger now uses Gradient Centralization by default, and applies it to all conv and fc layers by default.  However, everything is customizable so you can test with and without on your own datasets.  (Turn on off via "use_gc" flag at init).
 </br>
-# Best training results - use a 75% flat lr, then step down and run lower lr for 25%, or cosine descend last 25%. 
+### Best training results - use a 75% flat lr, then step down and run lower lr for 25%, or cosine descend last 25%. 
 </br>
 </br> It's important to note that simply running one learning rate the entire time will not produce optimal results.  Effectively Ranger will end up 'hovering' around the an optimal zone but can't descend into it unless it has some additional run time at a lower rate to drop down into the optimal valley.
 
-# Full customization at init: 
+### Full customization at init: 
 
 ![](ranger-with-gc-options.jpg)
 </br>
