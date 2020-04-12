@@ -15,11 +15,12 @@ Ranger now uses Gradient Centralization by default, and applies it to all conv a
 Effectively Ranger will end up 'hovering' around the optimal zone, but can't descend into it unless it has some additional run time at a lower rate to drop down into the optimal valley.
 
 ### Full customization at init: 
+<div  align="center"><img src="ranger-with-gc-options.jpg" height="80%" width="80%" alt=""/></div>
 
-![](ranger-with-gc-options.jpg)
 </br>
 Ranger will now print out id and gc settings at init so you can confirm the optimizer settings at train time:
-![](ranger-init.jpg)
+<div  align="center"><img src="ranger-init.jpg" height="80%" width="80%" alt=""/></div>
+
 /////////////////////
 
 Medium article with more info:  
