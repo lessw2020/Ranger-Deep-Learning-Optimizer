@@ -5,12 +5,18 @@ Ranger - a synergistic optimizer combining RAdam (Rectified Adam) and LookAhead,
 Latest version 20.4.11 - new record for accuracy on benchmarks with the addition of Gradient Centralization! </br> </br>
 What is Gradient Centralization? = "GC can be viewed as a projected gradient descent method with a constrained loss function. The Lipschitzness of the constrained loss function and its gradient is better so that the training process becomes more efficient and stable."  Source paper:  https://arxiv.org/abs/2004.01461v2
 
-Ranger now uses Gradient Centralization by default, and applies it to all conv and fc layers by default.  However, everything is customizable so you can test with and without on your own datasets.  (Turn on off via "use_gc" flag at init).  
+Ranger now uses Gradient Centralization by default, and applies it to all conv and fc layers by default.  However, everything is customizable so you can test with and without on your own datasets.  (Turn on off via "use_gc" flag at init).
+</br>
+# Best training results - use a 75% flat lr, then step down and run lower lr for 25%, or cosine descend last 25%. 
+</br>
+</br> It's important to note that simply running one learning rate the entire time will not produce optimal results.  Effectively Ranger will end up 'hovering' around the an optimal zone but can't descend into it unless it has some additional run time at a lower rate to drop down into the optimal valley.
 
 # Full customization at init: 
 
- 
-![](images/ranger-init.jpg)
+![](ranger-with-gc-options.jpg)
+</br>
+Ranger will now print out id and gc settings at init so you can confirm the optimizer settings at train time:
+![](ranger-init.jpg)
 /////////////////////
 
 Medium article with more info:  
