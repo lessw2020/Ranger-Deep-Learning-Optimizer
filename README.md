@@ -16,7 +16,6 @@ Effectively Ranger will end up 'hovering' around the optimal zone, but can't des
 
 ### Full customization at init: 
 <div  align="center"><img src="ranger-with-gc-options.jpg" height="80%" width="80%" alt=""/></div>
-
 </br>
 Ranger will now print out id and gc settings at init so you can confirm the optimizer settings at train time:
 <div  align="center"><img src="ranger-init.jpg" height="80%" width="80%" alt=""/></div>
