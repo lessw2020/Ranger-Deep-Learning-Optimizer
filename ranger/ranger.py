@@ -1,31 +1,40 @@
-#Ranger deep learning optimizer - RAdam + Lookahead combined.
-#https://github.com/lessw2020/Ranger-Deep-Learning-Optimizer
+# Ranger deep learning optimizer - RAdam + Lookahead + Gradient Centralization, combined into one optimizer.
 
-#Ranger has now been used to capture 12 records on the FastAI leaderboard.
+# https://github.com/lessw2020/Ranger-Deep-Learning-Optimizer 
+# and/or
+# https://github.com/lessw2020/Best-Deep-Learning-Optimizers
 
-#This version = 9.3.19  
+# Ranger has now been used to capture 12 records on the FastAI leaderboard.
 
-#Credits:
-#RAdam -->  https://github.com/LiyuanLucasLiu/RAdam
-#Lookahead --> rewritten by lessw2020, but big thanks to Github @LonePatient and @RWightman for ideas from their code.
-#Lookahead paper --> MZhang,G Hinton  https://arxiv.org/abs/1907.08610
+# This version = 20.4.11   
 
-#summary of changes: 
-#full code integration with all updates at param level instead of group, moves slow weights into state dict (from generic weights), 
-#supports group learning rates (thanks @SHolderbach), fixes sporadic load from saved model issues.
-#changes 8/31/19 - fix references to *self*.N_sma_threshold; 
-                #changed eps to 1e-5 as better default than 1e-8.
+# Credits:
+# Gradient Centralization --> https://arxiv.org/abs/2004.01461v2 (a new optimization technique for DNNs), github:  https://github.com/Yonghongwei/Gradient-Centralization
+# RAdam -->  https://github.com/LiyuanLucasLiu/RAdam
+# Lookahead --> rewritten by lessw2020, but big thanks to Github @LonePatient and @RWightman for ideas from their code.
+# Lookahead paper --> MZhang,G Hinton  https://arxiv.org/abs/1907.08610
+
+# summary of changes: 
+# 4/11/20 - add gradient centralization option.  Set new testing benchmark for accuracy with it, toggle with use_gc flag at init.  
+# full code integration with all updates at param level instead of group, moves slow weights into state dict (from generic weights), 
+# supports group learning rates (thanks @SHolderbach), fixes sporadic load from saved model issues.
+# changes 8/31/19 - fix references to *self*.N_sma_threshold; 
+# changed eps to 1e-5 as better default than 1e-8.
 
 import math
 import torch
 from torch.optim.optimizer import Optimizer, required
-import itertools as it
 
 
 
 class Ranger(Optimizer):
 
-    def __init__(self, params, lr=1e-3, alpha=0.5, k=6, N_sma_threshhold=5, betas=(.95,0.999), eps=1e-5, weight_decay=0):
+    def __init__(self, params, lr=1e-3,                       # lr
+                alpha=0.5, k=6, N_sma_threshhold=5,           # Ranger options
+                betas=(.95,0.999), eps=1e-5, weight_decay=0,  # Adam options
+                use_gc=True, gc_conv_only=False               # Gradient centralization on or off, applied to conv layers only or conv + fc layers
+                ):   
+
         #parameter checks
         if not 0.0 <= alpha <= 1.0:
             raise ValueError(f'Invalid slow update rate: {alpha}')
@@ -48,31 +57,31 @@ class Ranger(Optimizer):
         #adjustable threshold
         self.N_sma_threshhold = N_sma_threshhold
 
-        #now we can get to work...
-        #removed as we now use step from RAdam...no need for duplicate step counting
-        #for group in self.param_groups:
-        #    group["step_counter"] = 0
-            #print("group step counter init")
-
+        
         #look ahead params
+
         self.alpha = alpha
         self.k = k 
 
         #radam buffer for state
         self.radam_buffer = [[None,None,None] for ind in range(10)]
 
-        #self.first_run_check=0
+        #gc on or off
+        self.use_gc=use_gc
+        
+        #level of gradient centralization
+        self.gc_gradient_threshold = 3 if gc_conv_only else 1
+        
+        
+        print(f"Ranger optimizer loaded. \nGradient Centralization usage = {self.use_gc}")
+        if (self.use_gc and self.gc_gradient_threshold==1):
+            print(f"GC applied to both conv and fc layers")
+        elif (self.use_gc and self.gc_gradient_threshold==3):
+            print(f"GC applied to conv layers only")
+                                                                            
+                                                                             
 
-        #lookahead weights
-        #9/2/19 - lookahead param tensors have been moved to state storage.  
-        #This should resolve issues with load/save where weights were left in GPU memory from first load, slowing down future runs.
-
-        #self.slow_weights = [[p.clone().detach() for p in group['params']]
-        #                     for group in self.param_groups]
-
-        #don't use grad for lookahead weights
-        #for w in it.chain(*self.slow_weights):
-        #    w.requires_grad = False
+        
 
     def __setstate__(self, state):
         print("set state called")
@@ -94,6 +103,7 @@ class Ranger(Optimizer):
                 if p.grad is None:
                     continue
                 grad = p.grad.data.float()
+
                 if grad.is_sparse:
                     raise RuntimeError('Ranger optimizer does not support sparse gradients')
 
@@ -121,15 +131,31 @@ class Ranger(Optimizer):
                 exp_avg, exp_avg_sq = state['exp_avg'], state['exp_avg_sq']
                 beta1, beta2 = group['betas']
 
+                
+
+                #gc work  #3 = conv only, 1 = conv +fc
+                if len(list(grad.size()))>self.gc_gradient_threshold:                    
+                   grad.add_(-grad.mean(dim = tuple(range(1,len(list(grad.size())))), keepdim = True))
+                
+                #GC operation for Conv layers and FC layers   
+                if len(list(grad.size()))>self.gc_gradient_threshold:
+                   grad.add_(-grad.mean(dim = tuple(range(1,len(list(grad.size())))), keepdim = True))
+
+                
+
+                state['step'] += 1
+
                 #compute variance mov avg
                 exp_avg_sq.mul_(beta2).addcmul_(1 - beta2, grad, grad)
                 #compute mean moving avg
                 exp_avg.mul_(beta1).add_(1 - beta1, grad)
 
-                state['step'] += 1
+
+                
 
 
                 buffered = self.radam_buffer[int(state['step'] % 10)]
+                
                 if state['step'] == buffered[0]:
                     N_sma, step_size = buffered[1], buffered[2]
                 else:
@@ -144,9 +170,11 @@ class Ranger(Optimizer):
                         step_size = 1.0 / (1 - beta1 ** state['step'])
                     buffered[2] = step_size
 
+
                 if group['weight_decay'] != 0:
                     p_data_fp32.add_(-group['weight_decay'] * group['lr'], p_data_fp32)
 
+                # apply lr
                 if N_sma > self.N_sma_threshhold:
                     denom = exp_avg_sq.sqrt().add_(group['eps'])
                     p_data_fp32.addcdiv_(-step_size * group['lr'], exp_avg, denom)
