@@ -11,7 +11,7 @@ def read(fname):
 
 setup(
     name='ranger',
-    version='0.0.1',
+    version='0.1.dev0',
     packages=find_packages(
         exclude=['tests', '*.tests', '*.tests.*', 'tests.*']
     ),
