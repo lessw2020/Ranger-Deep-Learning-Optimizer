@@ -76,7 +76,7 @@ class RangerVA(Optimizer):
 
     def __setstate__(self, state):
         print("set state called")
-        super(Ranger, self).__setstate__(state)
+        super(RangerVA, self).__setstate__(state)
 
 
     def step(self, closure=None):
