@@ -3,8 +3,10 @@
 Ranger - a synergistic optimizer combining RAdam (Rectified Adam) and LookAhead, and now GC (gradient centralization) in one optimizer.
 </br>
 
-### Latest version 20.4.11 - new record for accuracy on benchmarks vs all optimizers tested, with the addition of Gradient Centralization!
+### Latest version 20.9.4 - updates Gradient Centralization to GC2 (thanks to GC developer) and removes addcmul_ deprecation warnings in PyTorch 1.60. 
 </br> </br>
+*Latest version is in ranger2020.py - looking at a few other additions before integrating into the main ranger.py.  
+
 What is Gradient Centralization? = "GC can be viewed as a projected gradient descent method with a constrained loss function. The Lipschitzness of the constrained loss function and its gradient is better so that the training process becomes more efficient and stable."  Source paper:  https://arxiv.org/abs/2004.01461v2
 </br>
 Ranger now uses Gradient Centralization by default, and applies it to all conv and fc layers by default.  However, everything is customizable so you can test with and without on your own datasets.  (Turn on off via "use_gc" flag at init).
