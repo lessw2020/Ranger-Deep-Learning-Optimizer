@@ -61,5 +61,17 @@ optimizer = Ranger(model.parameters(), **kwargs)
 Usage and notebook to test are available here:
 https://github.com/lessw2020/Ranger-Mish-ImageWoof-5
 
+### Citing this work
 
+We recommend you use the following to cite Ranger in your publications:
 
+```
+@misc{Ranger,
+  author = {Wright, Less},
+  title = {Ranger - a synergistic optimizer.},
+  year = {2019},
+  publisher = {GitHub},
+  journal = {GitHub repository},
+  howpublished = {\url{https://github.com/lessw2020/Ranger-Deep-Learning-Optimizer}}
+}
+```
