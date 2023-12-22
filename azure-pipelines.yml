@@ -1,0 +1,114 @@
+# Python package
+# Create and test a Python package on multiple Python versions.
+# Add steps that analyze code, save the dist with the build record, publish to a PyPI-compatible index, and more:
+# https://docs.microsoft.com/azure/devops/pipelines/languages/python
+variables:
+  package: ranger
+  srcDirectory: $(package)
+  testsDirectory: tests/
+  publishedVersion: 3.9
+  feed: 'MachineLearning/bb-python'
+
+trigger: 
+  branches: 
+    include:
+    - "*"
+  paths:
+    include:
+    - azure-pipelines.yml
+    - setup.py
+    - ranger/*
+
+jobs:
+
+# Our initial Job will lint and test our package against multiple Python versions in parallel
+# The name here is significant - we reference it later in the dependsOn property of the Publish job
+- job: Build
+
+  pool:
+     vmImage: ubuntu-20.04
+  strategy:
+    matrix:
+      python37:
+        pythonVersion: 3.7
+      python38:
+        pythonVersion: 3.8
+      python39:
+        pythonVersion: 3.9
+
+  steps:
+  - checkout: self
+    submodules: true
+  - task: UsePythonVersion@0
+    inputs:
+      versionSpec: '$(pythonVersion)'
+    displayName: 'Use Python $(pythonVersion)'
+
+  - script: |
+      sudo apt install build-essential cmake libboost-system-dev libboost-thread-dev libboost-program-options-dev libboost-test-dev libeigen3-dev zlib1g-dev libbz2-dev liblzma-dev
+      python -m pip install --upgrade pip
+      pip install wheel flake8 pylint
+    displayName: 'Install dependencies'
+
+    # Our built source dist & wheel will land in src/simple_package/dist
+  - bash: python setup.py sdist
+    displayName: Build package
+
+  # Upload everything in src/simple_package/dist (including subfolders) to the build artifacts for later use or debugging
+  # Add pythonVersion to the artifact name to avoid conflicts and ensure we capture all build output
+  - task: PublishPipelineArtifact@0
+    displayName: Publish artifacts
+    inputs:
+      artifactName: dist$(pythonVersion)
+      targetPath: dist
+
+# If all Build steps for all Python versions have succeeded,
+# we will download one of the already-validated build assets and publish it to an Azure Artifacts feed
+- job: Publish
+
+  # Run on a Microsoft-hosted agent running Ubuntu-16.04
+  # https://docs.microsoft.com/en-us/azure/devops/pipelines/agents/hosted?view=azure-devops
+  pool:
+    vmImage: ubuntu-20.04
+
+  # We want to wait for all Build Jobs to complete before running the Publish Job
+  dependsOn: Build
+
+  # Only publish when the previous Jobs are successful and we're building the master branch
+  condition: and(succeeded(), eq(variables['build.sourceBranch'], 'refs/heads/master'))
+
+  # Variables specific to the Publish job
+  variables:
+    artifactName: dist$(publishedVersion)
+    pythonVersion: 3.9
+
+  # Steps are the specific tasks that execute code and do things
+  steps:
+
+  # Explicitly disable source checkout to keep a pristine environment for publishing
+  - checkout: none
+
+  # Download from build artifacts
+  - download: current
+    artifact: $(artifactName)
+
+  # Set the version of Python to use for publishing (which may or may not match the version the package was built with or tested against)
+  - task: UsePythonVersion@0
+    displayName: Use Python $(pythonVersion)
+    inputs:
+      versionSpec: $(pythonVersion)
+
+  # Install tools needed for publishing
+  - bash: python -m pip install twine
+    displayName: Install twine
+
+  # Authenticate to Azure Artifacts
+  # This sets the PYPIRC_PATH environment variable, which contains credentials for the feed
+  - task: TwineAuthenticate@0
+    displayName: Configure twine authentication
+    inputs:
+      artifactFeeds: $(feed)
+
+  # Upload everything in the dist folder to the private Artifacts feed
+  - bash: twine upload -r $(feed) --config-file $(PYPIRC_PATH) $(Pipeline.Workspace)/$(artifactName)/*
+    displayName: Publish artifacts
